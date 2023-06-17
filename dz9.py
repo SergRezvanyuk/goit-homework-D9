@@ -1,39 +1,86 @@
 
 
+def input_error(func):
+    def inner(x):
+        result = func(x)
+        global err
+        if err == 0:
+            print(1,x)
+            return result
+        elif err == 1:
+            print(2,x)
+            return 'Wrong command',True
+        elif err == 2:
+            print(3,x)
+            return 'Error. There should be a command, name, phone number separated by a space', True
+        elif err == 3:
+            return 'Error. The number must consist of numbers, brackets and a sign "-"', True
+        elif err == 4:
+            return 'Subscriber not found', True
+    
+    return inner
+
+
+
+
 def hello(str):
     return 'How can I help you?', True
 
-
+@input_error
 def add(str):
     text = str.split()
-    if len(text) < 2:
-        return 'Error. Must be: first name (surname), phone number', True
-    global book
-    book.update({str[:len(str)-len(text[-1])]: text[-1]})
+    global err, book
+    try:
+        if len(text) >1:
+            pattern = r'^[\(\)\-\d]+$'
+            if re.match(pattern, text[-1]):
+                book.update({str[:len(str)-len(text[-1])]: text[-1]})
+                return 'Added ' + str, True
+            else:
+                err = 3
+                return
+                        
+        else:
+            err = 2
+            return
+    except :
+        err = 2
 
-    return 'Added ' + str, True
+        
+    
+    
 
 
+@input_error
 def change(str):
+    global book, err
     text = str.split()
     if len(text) < 2:
-        return 'Error. Must be: first name (surname), phone number', True
-    global book
+        err = 2
+        return
     t = book.get(str[:-len(text[-1])])
     if t:
-        book.update({str[:len(str)-len(text[-1])]: text[-1]})
+        pattern = r'^[\(\)\-\d]+$'
+        if re.match(pattern, text[-1]):
+            book.update({str[:len(str)-len(text[-1])]: text[-1]})
+            return 'Changed ' + str, True
+        else:
+                err = 3
+                return
     else:
-        return f'Error. {str[:-len(text[-1])]} not found. Repeat, please', True
+        err = 4
+        return 
 
     return 'Changed ' + str, True
 
-
+@input_error
 def phone(str):
-    text = str.split()
-    global book
-    t = book.get(str+' ')
+    text = str.split()[0]
+    global book, err
+    t = book.get(text+' ')
     if not t:
-        return f'Error. {str} not found. Repeat, please', True
+        err = 4
+        return 
 
     return str + ' :' + t, True
 
@@ -53,29 +100,45 @@ def close(str):
 
 def exit(str):
     return str, False
+
     
-book = {}
+
+
+
 def func_distrib(input_C, commands):
+    global err
+    if input_C.strip(): 
+        input_0 = (input_C.lower()).split()[0]
+        if input_0 in commands:
+            c = input_0 + '(input_C[len(input_0) + 1:],'')'
+            answer = eval(c)
+            # answer = add(input_C)
+            return answer
+        input_0 = (input_C).split()
+        if isinstance(input_0,list):
+            input_1 = (input_C.lower()).split()[0] + ' ' + (input_C.lower()).split()[1]        
+            if input_1 in commands:
+                c = (input_C.lower()).split()[0] + '_' + (input_C.lower()).split()[1]
+                c = c + '(input_C[len(c)+1:])'
+                answer = eval(c)
+                return answer
+    return f'Wrong command {input_C}', True
 
-    answer = ('Input error. Repeat, please',True)
-    for com in commands:
-        if com == input_C.lower()[:len(com)]:
-            if len(com) == len(input_C):
-                test = com.replace(' ', '_') + '()'
-                answer = eval(com.replace(' ', '_') + '("")')
-            else:
-                input_mod = input_C[len(com):].strip()
-                answer = eval(com.replace(' ', '_') + '(input_mod)')
-    return answer
 
+ 
+import re 
+book = {}
+err = 0
 
 
 
 def main():
+    global err
     commands = ('hello','add','change','phone','show all','good bye','close','exit')
     l = True
     while l:
         text = input(' Go -->')
+        err = 0
         f = func_distrib(text, commands)
         l = f[1]
         print(f[0])
